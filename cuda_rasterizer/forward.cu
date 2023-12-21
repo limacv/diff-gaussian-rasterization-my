@@ -199,6 +199,15 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float p_w = 1.0f / (p_hom.w + 0.0000001f);
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
+	float3 view_dir = {viewmatrix[2], viewmatrix[6], viewmatrix[10]};
+	float z_approx = 0;
+	if (abs(view_dir.x) > abs(view_dir.y) && abs(view_dir.x) > abs(view_dir.z))
+		z_approx = view_dir.x > 0 ? p_orig.x : -p_orig.x;
+	else if (abs(view_dir.y) > abs(view_dir.z))
+		z_approx = view_dir.y > 0 ? p_orig.y : -p_orig.y;
+	else
+		z_approx = view_dir.z > 0 ? p_orig.z : -p_orig.z;
+
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
 	const float* cov3D;
@@ -247,7 +256,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 
 	// Store some useful helper data for the next steps.
-	depths[idx] = p_view.z;
+	depths[idx] = z_approx + 100.f;
 	radii[idx] = my_radius;
 	points_xy_image[idx] = point_image;
 	// Inverse 2D covariance and opacity neatly pack into one float4
