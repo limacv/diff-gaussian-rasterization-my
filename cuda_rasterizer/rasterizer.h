@@ -50,6 +50,7 @@ namespace CudaRasterizer
 			const bool prefiltered,
 			float* out_color,
 			int* radii = nullptr,
+			bool is_fisheye = false,
 			bool debug = false);
 
 		static void backward(

@@ -34,6 +34,7 @@ RasterizeGaussiansCUDA(
 	const torch::Tensor& sh,
 	const int degree,
 	const torch::Tensor& campos,
+	const bool is_fisheye,
 	const bool prefiltered,
 	const bool debug);
 

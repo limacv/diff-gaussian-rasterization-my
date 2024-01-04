@@ -86,11 +86,32 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
 	t.x = min(limx, max(-limx, txtz)) * t.z;
 	t.y = min(limy, max(-limy, tytz)) * t.z;
 
-	glm::mat3 J = glm::mat3(
-		focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
-		0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
-		0, 0, 0);
+	glm::mat3 J;
+	if (is_fisheye)
+	{
+		float eps = 0.001f;
+		float x2 = t.x * t.x + eps;
+		float y2 = t.y * t.y;
+		float xy = t.x * t.y;
+		float x2y2 = x2 + y2 ;
+		float len_xy = length(glm::vec2({t.x, t.y})) + eps;
+		float x2y2z2_inv = 1.f / (x2y2 + t.z * t.z);
 
+		float b = glm::atan(len_xy, t.z) / len_xy / x2y2;
+		float a = t.z * x2y2z2_inv / (x2y2);
+		J = glm::mat3(
+			focal_x * (x2 * a + y2 * b), focal_x * xy * (a - b),    - focal_x * t.x * x2y2z2_inv,
+			focal_y * xy  * (a - b),    focal_y * (y2 * a + x2 * b), - focal_y * t.y * x2y2z2_inv,
+			0, 0, 0
+		);
+	}
+	else
+	{
+		J = glm::mat3(
+			focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
+			0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
+			0, 0, 0);
+	}
 	glm::mat3 W = glm::mat3(
 		viewmatrix[0], viewmatrix[4], viewmatrix[8],
 		viewmatrix[1], viewmatrix[5], viewmatrix[9],
@@ -200,11 +221,16 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float3 p_proj;
 	if (is_fisheye)
 	{
-		float3 p_view = transformPoint4x3(p_orig, viewmatrix);
-		float inv_xy_len = 1.0f / glm::length(glm::vec2({p_view.x, p_view.y})) + 0.0001f;
+		// float3 p_view = transformPoint4x3(p_orig, viewmatrix);
+		// p_proj.x = - p_view.x * focal_x / p_view.z * 2 / W;
+		// p_proj.y = - p_view.y * focal_y / p_view.z * 2 / H;
+		// p_proj.z = 0;
+		float xy_len = glm::length(glm::vec2({p_view.x, p_view.y})) + 0.0001f;
 		float theta = glm::atan(xy_len, p_view.z);
-		p_proj.x = 2 * p_view.x * focal_x * theta * inv_xy_len / W;
-		p_proj.y = 2 * p_view.y * focal_y * theta * inv_xy_len / H;
+		if (abs(theta) > 3.14 * 0.403)
+			return;
+		p_proj.x = - 2 * p_view.x * focal_x * theta / (xy_len * W);
+		p_proj.y = - 2 * p_view.y * focal_y * theta / (xy_len * H);
 		p_proj.z = 0;
 	}
 	else
