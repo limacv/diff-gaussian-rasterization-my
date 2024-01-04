@@ -217,6 +217,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const bool prefiltered,
 	float* out_color,
 	int* radii,
+	bool is_fisheye,
 	bool debug)
 {
 	const float focal_y = height / (2.0f * tan_fovy);
@@ -269,6 +270,7 @@ int CudaRasterizer::Rasterizer::forward(
 		geomState.conic_opacity,
 		tile_grid,
 		geomState.tiles_touched,
+		is_fisheye,
 		prefiltered
 	), debug)
 

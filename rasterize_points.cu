@@ -51,6 +51,7 @@ RasterizeGaussiansCUDA(
 	const torch::Tensor& sh,
 	const int degree,
 	const torch::Tensor& campos,
+	const bool is_fisheye,
 	const bool prefiltered,
 	const bool debug)
 {
@@ -109,6 +110,7 @@ RasterizeGaussiansCUDA(
 		prefiltered,
 		out_color.contiguous().data<float>(),
 		radii.contiguous().data<int>(),
+		is_fisheye,
 		debug);
   }
   return std::make_tuple(rendered, out_color, radii, geomBuffer, binningBuffer, imgBuffer);

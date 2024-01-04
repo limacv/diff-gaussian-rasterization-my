@@ -75,6 +75,7 @@ class _RasterizeGaussians(torch.autograd.Function):
             sh,
             raster_settings.sh_degree,
             raster_settings.campos,
+            raster_settings.is_fisheye,
             raster_settings.prefiltered,
             raster_settings.debug
         )
@@ -165,6 +166,7 @@ class GaussianRasterizationSettings(NamedTuple):
     projmatrix : torch.Tensor
     sh_degree : int
     campos : torch.Tensor
+    is_fisheye : bool
     prefiltered : bool
     debug : bool
 
